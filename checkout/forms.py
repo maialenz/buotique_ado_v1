@@ -1,9 +1,9 @@
 from django import forms
-from .modelss import Order
+from .models import Order
 
 
 class OrderForm(forms.ModelForm):
-    class Metal:
+    class Meta:
         model = Order
         fields = ('full_name', 'email', 'phone_number',
                   'street_address1', 'street_address2',
