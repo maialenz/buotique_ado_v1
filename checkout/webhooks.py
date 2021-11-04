@@ -5,7 +5,6 @@ from django.views.decorators.csrf import csrf_exempt
 
 from checkout.webhook_handler import StripeWH_Handler
 
-import json
 import stripe
 
 
@@ -19,11 +18,12 @@ def webhook(request):
 
     # Get the webhook data and verify its signature
     payload = request.body
+    sig_header = request.META['HTTP_STRIPE_SIGNATURE']
     event = None
 
     try:
-        event = stripe.Event.construct_from(
-        json.loads(payload), wh_secret
+        event = stripe.Webhook.construct_event(
+            payload, sig_header, wh_secret
         )
     except ValueError as e:
         # Invalid payload
@@ -33,18 +33,6 @@ def webhook(request):
         return HttpResponse(content=e, status=400)
     except Exception as e:
         return HttpResponse(content=e, status=400)
-
-    # Handle the event
-    if event.type == 'payment_intent.succeeded':
-        payment_intent = event.data.object # contains a stripe.PaymentIntent
-        print('Payment Intent was successful!')
-    elif event.type == 'payment_method.attached':
-        payment_method = event.data.object # contains a stripe.PaymentMethod
-        print('Payment Method was attached to a Customer!')
-    # ... handle other event types
-    else:
-        print('Unhandled event type {}'.format(event.type))
-    return HttpResponse(status=200)
 
     # Set up a webhook handler
     handler = StripeWH_Handler(request)
